@@ -29,19 +29,22 @@ COLUMN_INDICES = {
 }
 
 # Style for the filters
-## First Round
-GREEN_FILL = PatternFill(start_color='c6efce', end_color='c6efce', fill_type='solid')
-GREEN_FONT = Font(color='006100')
+STYLES = {
+    "GREEN_STYLE": {
+        "fill": PatternFill(start_color='c6efce', end_color='c6efce', fill_type='solid'),
+        "font": Font(color='006100')
+    },
+    "GREY_ORANGE_STYLE": {
+        "fill": PatternFill(start_color="f2f2f2", end_color="f2f2f2", fill_type='solid'),
+        "font": Font(bold=True, color='fa7d00')
+    }
+}
 
-## Second Round
-GREY_FILL = PatternFill(start_color="f2f2f2", end_color="f2f2f2", fill_type='solid')
-BOLD_ORANGE_FONT = Font(bold=True, color='fa7d00')
-
-# Function to set value and style for a cell
-def set_cell(cell, value, fill, font):
+# Function to set value and style for a cell using style sets
+def set_cell_style(cell, value, style_set):
     cell.value = value
-    cell.fill = fill
-    cell.font = font
+    cell.fill = style_set["fill"]
+    cell.font = style_set["font"]
 
 # Load Excel file and specific sheet
 file_path = '23NR10186_latest_emedgene_destacado.xlsx'
@@ -56,16 +59,16 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
         ### 'N' is in column 'O' = 14, 'SPiCEinter_2thr' is in column 'DZ' = 129 and 'Informe' is in column 'P' = 15, print 'No x20'
         ### Highlight cell in color "green"
         if (row[COLUMN_INDICES["N"]].value == 20) and \
-            (row[COLUMN_INDICES["SPiCEinter_2thr"]].value in ['low', 'Outside SPiCE Interpretation']) and \
-            (not row[COLUMN_INDICES["Informe"]].value):
-            set_cell(row[COLUMN_INDICES["Informe"]], 'No x20', GREEN_FILL, GREEN_FONT)
+        (row[COLUMN_INDICES["SPiCEinter_2thr"]].value in ['low', 'Outside SPiCE Interpretation']) and \
+        (not row[COLUMN_INDICES["Informe"]].value):
+            set_cell_style(row[COLUMN_INDICES["Informe"]], 'No x20', STYLES["GREEN_STYLE"])
 
         ### 'OMIM' is in column 'AA' = 26, 'gnomad_HetCount_all" is in column 'CO' = 92
         ### Print('No x frec en AD')
         if ("recessive" not in str(row[COLUMN_INDICES["OMIM"]].value)) and \
         (row[COLUMN_INDICES["gnomad_HetCount_all"]].value > 10) and \
         (not row[COLUMN_INDICES["Informe"]].value):
-            set_cell(row[COLUMN_INDICES["Informe"]], 'No x frec en AD', GREEN_FILL, GREEN_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], 'No x frec en AD', STYLES["GREEN_STYLE"])
 
         ### 'OMIM' is in column 'AA' = 26, and gnomad_AF_afr is in column 'CG' = 84, gnomad_AF_amr 'CH' = 85, gnomad_AF_eas 'CJ' = 87, \
         ### gnomad_AF_sas 'CK' = 88, gnomad_AF_nfe 'CL' = 89, gnomad_AF_fin 'CM' = 90
@@ -73,7 +76,7 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
         if ("recessive" in str(row[COLUMN_INDICES["OMIM"]].value)) and \
         (any(row[COLUMN_INDICES[col]].value > 0.002 for col in ["gnomad_AF_afr", "gnomad_AF_amr", "gnomad_AF_eas", "gnomad_AF_sas", "gnomad_AF_nfe", "gnomad_AF_fin"] if row[COLUMN_INDICES[col]].value is not None)) and \
         (not row[COLUMN_INDICES["Informe"]].value):
-            set_cell(row[COLUMN_INDICES["Informe"]], 'No x frec en AR', GREEN_FILL, GREEN_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], 'No x frec en AR', STYLES["GREEN_STYLE"])
 
 
     ## Loop through and apply filters (2nd round "Grey")
@@ -82,7 +85,7 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
         ### Highlight cell in color "grey" and set text style "bold" and color "orange"  
         if ("Pathogenic" in str(row[COLUMN_INDICES["ClinVar"]].value) or "Likely_pathogenic" in str(row[COLUMN_INDICES["ClinVar"]].value)) and \
         (str(row[COLUMN_INDICES["Informe"]].value) not in ['No x20', 'No x frec en AD', 'No x frec en AR']):
-            set_cell(row[COLUMN_INDICES["Informe"]], 'Patho', GREY_FILL, BOLD_ORANGE_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], 'Patho', STYLES["GREY_ORANGE_STYLE"])
 
         ### 'anonimous_ANNOTATION' is in column 'AT' = 45, check if "frameshift deletion", "frameshift insertion", or "start lost" or "stopgain" is in the cell
         ### If the previous cell has been filtered as "Patho": append "Frameshift" to the previous "Informe" cell, else print "Frameshift"
@@ -91,7 +94,7 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
             (str(row[COLUMN_INDICES["Informe"]].value) not in ['No x20', 'No x frec en AD', 'No x frec en AR']) and \
             (str(row[COLUMN_INDICES["anonimous_ANNOTATION"]].value) not in ['nonframeshift deletion', 'nonframeshift insertion']):
             new_value = f'{row[COLUMN_INDICES["Informe"]].value}, LOF' if row[COLUMN_INDICES["Informe"]].value == 'Patho' else 'LOF'
-            set_cell(row[COLUMN_INDICES["Informe"]], new_value, GREY_FILL, BOLD_ORANGE_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], new_value, STYLES["GREY_ORANGE_STYLE"])
 
         ### 'anonimous_ANNOTATION' is in column 'AT' = 45, check if it mentions "splice_acceptor_variant" or "splice_donor_variant"
         ### 'annonimous_Func_refGene" is in column 'AU' = 46, check if it mentions "splicing"
@@ -103,7 +106,7 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
             (row[COLUMN_INDICES["distNearestSS"]].value in [-2, -1, 1, 2]) and \
             (str(row[COLUMN_INDICES["Informe"]].value) not in ['No x20', 'No x frec en AD', 'No x frec en AR']):
             new_value = f'{row[COLUMN_INDICES["Informe"]].value}, Splicing' if any(term in str(row[COLUMN_INDICES["Informe"]].value) for term in ['Patho', 'LOF']) else 'Splicing'
-            set_cell(row[COLUMN_INDICES["Informe"]], new_value, GREY_FILL, BOLD_ORANGE_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], new_value, STYLES["GREY_ORANGE_STYLE"])
 
         ### 'Emedgene_Tag' is in column 'K' = 10, check if it mentions "most_likely"
         ### If the previous cell has been filtered as "Patho" or "Frameshift" or "Patho, Frameshift, Splicing": add "Most Likely" to the "Informe" cell, else print "Most Likely"
@@ -111,7 +114,7 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
         if ("most_likely" in str(row[COLUMN_INDICES["Emedgene_Tag"]].value)) and \
             (str(row[COLUMN_INDICES["Informe"]].value) not in ['No x20', 'No x frec en AD', 'No x frec en AR']):
             new_value = f'{row[COLUMN_INDICES["Informe"]].value}, Most Likely' if any(term in str(row[COLUMN_INDICES["Informe"]].value) for term in ['Patho', 'LOF', 'Splicing']) else 'Most Likely'
-            set_cell(row[COLUMN_INDICES["Informe"]], new_value, GREY_FILL, BOLD_ORANGE_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], new_value, STYLES["GREY_ORANGE_STYLE"])
 
         ### 'Emedgene_Tag' is in column 'K' = 10, check if it mentions "candidate" 
         ###  AND 'Emedgene_Evidence_Text' is in column 'N' = 13, check if it mentions "Match"
@@ -121,7 +124,7 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
             ("Match" in str(row[COLUMN_INDICES["Emedgene_Evidence_Text"]].value)) and \
             (str(row[COLUMN_INDICES["Informe"]].value) not in ['No x20', 'No x frec en AD', 'No x frec en AR']):
             new_value = f'{row[COLUMN_INDICES["Informe"]].value}, Candidate' if any(term in str(row[COLUMN_INDICES["Informe"]].value) for term in ['Patho', 'LOF', 'Splicing', 'Most Likely']) else 'Candidate'
-            set_cell(row[COLUMN_INDICES["Informe"]], new_value, GREY_FILL, BOLD_ORANGE_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], new_value, STYLES["GREY_ORANGE_STYLE"])
 
         ### 'incidental_findings' is in column 'BO' = 66, check if it mentions "YES"
         ### If the previous cell has been filtered as "Patho" or "Frameshift" or "Patho, Frameshift, Splicing, Most Likely, Candidate" to the "Informe" cell, else print "Most Likely"
@@ -129,7 +132,7 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
         if ("YES" in str(row[COLUMN_INDICES["incidental_findings"]].value)) and \
             (str(row[COLUMN_INDICES["Informe"]].value) not in ['No x20', 'No x frec en AD', 'No x frec en AR']):
             new_value = f'{row[COLUMN_INDICES["Informe"]].value}, ACMG' if any(term in str(row[COLUMN_INDICES["Informe"]].value) for term in ['Patho', 'LOF', 'Splicing', 'Most Likely', 'Candidate']) else 'ACMG'
-            set_cell(row[COLUMN_INDICES["Informe"]], new_value, GREY_FILL, BOLD_ORANGE_FONT)
+            set_cell_style(row[COLUMN_INDICES["Informe"]], new_value, STYLES["GREY_ORANGE_STYLE"])
 
         ### 'OMIM' is in column 'AA' = 26, check if it mentions "ND"
         ### If the previous cell has been filtered as "Patho" or "Frameshift" or "Patho, Frameshift, Splicing, Most Likely, Candidate, ACMG" to the "Informe" cell, else print "No x ND"
@@ -140,7 +143,6 @@ if 'OMIM+NIM CLIN+ClinVar' in wb.sheetnames:
             # row[15].value = 'No x ND'
             # row[15].fill = PatternFill(start_color='90EE90', end_color='90EE90', fill_type='solid')
 
-        #### Check entry 76 (Particular case)
         #### Make sure if the filter above applies sequentially or after all the above filters have been applied.
         #### Can ND be checked at the same time as the rest of the other filters or not?   
 
