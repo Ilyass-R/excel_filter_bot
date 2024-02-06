@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+import sv_ttk
 import threading
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
@@ -168,5 +169,7 @@ sheet_dropdown.pack()
 # Run button
 run_button = tk.Button(root, text="Run", command=lambda: threading.Thread(target=run_script).start())
 run_button.pack()
+
+sv_ttk.set_theme("light")
 
 root.mainloop()
